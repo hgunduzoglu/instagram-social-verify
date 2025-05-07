@@ -15,3 +15,6 @@ noir_bignum  = { tag = "v0.6.0", git = "https://github.com/noir-lang/noir-bignum
 # Bu seçenekler yalnızca paket derlenirken geçerli:
 compile_tests = false      # bağımlılıkların tests klasörlerini atla
 
+[workspace]
+compile_tests = false
+

@@ -1,8 +1,11 @@
+
 #!/usr/bin/env bash
 set -e
 
-nargo compile --workspace --output-format=json    # JSON’ı target/’a yazar
+# 1) ACIR (JSON) derle / güncelle – gerekiyorsa
+nargo compile --package instagram_example    # veya nargo export ...
 
-pnpm noir-codegen ./examples/instagram_example/target/*.json \
+# 2) TypeScript tiplerini üret (JSON'dan)
+pnpm noir-codegen \
+  ./target/*.json \
   --out-dir ./src/__generated__
-
