@@ -1,6 +1,7 @@
 import type { CompiledCircuit } from '@noir-lang/noir_js';
 import { generateEmailVerifierInputs } from '@zk-email/zkemail-nr';
 import { Prover, type ProvingBackend } from '@zkpersona/noir-helpers';
+import { Fr } from "@aztec/aztec.js";
 
 export const circuitParams = {
   instagram: {
@@ -33,6 +34,7 @@ function extractUsernameFromEmail(emailContent: string): string {
   const usernameMatch = emailContent.match(/Merhaba ([^,]+),/);
   
   if (usernameMatch && usernameMatch[1]) {
+    console.log(`Found username in greeting: ${usernameMatch[1]}`);
     return usernameMatch[1];
   }
   
@@ -41,6 +43,7 @@ function extractUsernameFromEmail(emailContent: string): string {
   const footerMatch = emailContent.match(/adresine ([^\s]+) i.in g.nderilmi.tir/);
   
   if (footerMatch && footerMatch[1]) {
+    console.log(`Found username in footer: ${footerMatch[1]}`);
     return footerMatch[1];
   }
   
@@ -66,22 +69,41 @@ export async function generateCircuitInputs(
   const emailData = textEncoder.encode(expectedToAddress);
   const emailHash = simpleHash(emailData);
   
-  // Extract username from email if not provided
-  const username = expectedUsername || extractUsernameFromEmail(emlString);
+  // Extract username from email
+  const extractedUsername = extractUsernameFromEmail(emlString);
+  // Use provided username or fall back to extracted username
+  const claimedUsername = expectedUsername || extractedUsername;
   
-  // Calculate hash of the username
-  const usernameData = textEncoder.encode(username);
-  const usernameHash = simpleHash(usernameData);
+  // Calculate hash of both usernames
+  const extractedUsernameData = textEncoder.encode(extractedUsername);
+  const extractedUsernameHash = simpleHash(extractedUsernameData);
+  
+  const claimedUsernameData = textEncoder.encode(claimedUsername);
+  const claimedUsernameHash = simpleHash(claimedUsernameData);
   
   console.log('Expected email:', expectedToAddress);
   console.log('Email hash value:', emailHash.toString());
-  console.log('Instagram username:', username);
-  console.log('Username hash value:', usernameHash.toString());
+  console.log('Extracted Instagram username:', extractedUsername);
+  console.log('Claimed username:', claimedUsername);
+  console.log('Extracted username hash:', extractedUsernameHash.toString());
+  console.log('Claimed username hash:', claimedUsernameHash.toString());
   
-  // Noir "main" arguments
+  // Log warning if usernames don't match
+  if (claimedUsername !== extractedUsername) {
+    console.warn(`WARNING: Claimed username "${claimedUsername}" doesn't match extracted username "${extractedUsername}"`);
+    console.warn('This will cause the proof to fail.');
+  }
+  
+  // Convert hashes to field format
+  const emailHashField = Fr.fromString(emailHash.toString());
+  const extractedUsernameHashField = Fr.fromString(extractedUsernameHash.toString());
+  const claimedUsernameHashField = Fr.fromString(claimedUsernameHash.toString());
+  
+  // Noir "main" arguments - passing both username hashes as separate parameters
   return {
     ...base,
-    expected_to_hash: emailHash.toString(),     // Pass the email hash as a string
-    expected_username_hash: usernameHash.toString()  // Pass the username hash as a string
+    expected_to_hash: emailHashField.toString(),
+    extracted_username_hash: extractedUsernameHashField.toString(),
+    expected_username_hash: claimedUsernameHashField.toString()
   };
 }

@@ -24,7 +24,8 @@ pub fn verify_instagram_email(
     to_header_sequence:   Sequence,
     to_address_sequence:  Sequence,
     expected_to_hash: Field,
-    expected_username_hash: Field,
+    extracted_username_hash: Field, // Hash of the username extracted from the email
+    expected_username_hash: Field,  // Hash of the user's claimed Instagram username
     // We pass the username as a separate parameter 
     // For now, we'll just verify the hash rather than extracting it directly
 ) -> VerifiedOutputs {
@@ -60,13 +61,20 @@ pub fn verify_instagram_email(
     // Verify the hash matches the expected hash
     assert(sum == expected_to_hash, "Recipient email hash doesn't match expected hash");
 
-    // 4. Since extracting the username directly inside the circuit is complex with Noir's constraints,
-    // we will verify the provided username hash against the expected hash
-    // This means the username extraction will happen in the frontend JavaScript code
-    // and the hash will be passed to the circuit
+    // 4. Username verification
+    // In a zero-knowledge proof, we need to verify that the Instagram email 
+    // contains the same username that the user claims to have, without revealing
+    // the actual username.
+    //
+    // Since extracting the username directly from the email body in Noir would be complex,
+    // we use the following approach:
+    // 1. The JavaScript code extracts the actual username from the email
+    // 2. The JavaScript code also gets the claimed username from the user
+    // 3. The JavaScript code hashes both usernames and passes the hashes to the circuit
+    // 4. The circuit verifies that both hashes match
     
-    // Verify the username hash matches the expected hash
-    assert(expected_username_hash != 0, "Username hash cannot be zero");
+    // We verify that the extracted username from the email matches the user's claimed username
+    assert(extracted_username_hash == expected_username_hash, "Username in email doesn't match claimed username");
     
     VerifiedOutputs::new(
         pubkey.hash(),                 // pub_key_hash
