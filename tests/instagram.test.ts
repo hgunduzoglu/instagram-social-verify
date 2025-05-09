@@ -29,19 +29,25 @@ describe('Instagram email verification', () => {
 
   it.skipIf(skipHonkProving)('proves & verifies (honk backend)', async () => {
     const eml = readFileSync(path.join(__dirname, '../data/instagram-valid.eml'));
-    const inputs = await generateCircuitInputs(eml, 'instagram');
+    
 
-    const proof = await prover.fullProve(inputs, { type: 'honk' });
-    const ok    = await prover.verify(proof,    { type: 'honk' });
+    const inputs = await generateCircuitInputs(eml, 'instagram');
+    const proof1 = await prover.fullProve(inputs, { type: 'honk' });
+    const ok    = await prover.verify(proof1,    { type: 'honk' });
+    console.log('proof1', proof1);
     expect(ok).toBe(true);
   });
 
   it.skipIf(skipPlonkProving)('proves & verifies (plonk backend)', async () => {
     const eml = readFileSync(path.join(__dirname, '../data/instagram-valid.eml'));
+
     const inputs = await generateCircuitInputs(eml, 'instagram');
 
-    const proof = await prover.fullProve(inputs, { type: 'plonk' });
-    const ok    = await prover.verify(proof,    { type: 'plonk' });
+    const proof2 = await prover.fullProve(inputs, { type: 'plonk' });
+    const ok    = await prover.verify(proof2,    { type: 'plonk' });
+    console.log('proof2', proof2);
     expect(ok).toBe(true);
   });
+
+
 });

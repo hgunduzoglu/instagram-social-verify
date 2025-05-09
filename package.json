@@ -12,5 +12,8 @@
   "scripts": {
     "compile": "bash scripts/generate-types.sh",
     "test": "vitest"
+  },
+  "dependencies": {
+    "crypto-js": "^4.2.0"
   }
 }
