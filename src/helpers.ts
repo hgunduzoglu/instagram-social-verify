@@ -2,7 +2,6 @@ import type { CompiledCircuit } from '@noir-lang/noir_js';
 import { generateEmailVerifierInputs } from '@zk-email/zkemail-nr';
 import { Prover, type ProvingBackend } from '@zkpersona/noir-helpers';
 
-
 export const circuitParams = {
   instagram: {
     maxHeadersLength: 576,
@@ -18,22 +17,37 @@ export type CircuitInputMap = { instagram: any };   // kod jenerasyonu sonrası 
 export const createProver = (circuit: CompiledCircuit, backend: ProvingBackend) =>
   new Prover(circuit, backend);
 
+// Simple hash function to match the Noir implementation
+// We simply sum the bytes multiplied by their position (i+1)
+function simpleHash(data: Uint8Array): bigint {
+  let sum = BigInt(0);
+  for (let i = 0; i < data.length; i++) {
+    sum += BigInt(data[i]) * BigInt(i + 1);
+  }
+  return sum;
+}
+
 export async function generateCircuitInputs(
   eml: Buffer | string,
-  expectedToAddress: string,      // 👈 yeni parametre
+  expectedToAddress: string,      // Still take the email address as input
 ) {
-  // EML’den gelen default inputlar:
+  // Get the basic inputs from the email
   const base = await generateEmailVerifierInputs(
     eml,
     circuitParams.instagram,
   );
 
-  // Pedersen hash’i Noir ile birebir aynı biçimde üret
-  const expected_to_hash= '0xabcdef1234567890deadbeefcafef00d1234567890abcdefdeadbeefcafef00d';
-
-  // Noir “main” argüman düzeni ↴
+  // Calculate hash of the expected email address using the same algorithm as in Noir
+  const textEncoder = new TextEncoder();
+  const emailData = textEncoder.encode(expectedToAddress);
+  const emailHash = simpleHash(emailData);
+  
+  console.log('Expected email:', expectedToAddress);
+  console.log('Email hash value:', emailHash.toString());
+  
+  // Noir "main" argüman düzeni ↴
   return {
     ...base,
-    expected_to_hash,
+    expected_to_hash: emailHash.toString()  // Pass the hash as a string
   };
 }

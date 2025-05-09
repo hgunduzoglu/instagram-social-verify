@@ -1,7 +1,6 @@
 use instagram_sv::{
     constants::{
-        MAX_EMAIL_HEADER_LENGTH,
-        INSTAGRAM_FROM_EMAIL,         
+        MAX_EMAIL_HEADER_LENGTH,     
     },
     instagram::verify_instagram_email,
     utils::VerifiedOutputs,
@@ -16,15 +15,13 @@ fn main(
     from_address_sequence: Sequence,
     to_header_sequence:   Sequence,
     to_address_sequence:  Sequence,
+    expected_to_hash: Field,  // Updated: hash of user's email to verify
 ) -> pub VerifiedOutputs {
-
-    let expected_to: BoundedVec<u8, 320> =
-        BoundedVec::from(INSTAGRAM_FROM_EMAIL);   
 
     verify_instagram_email(
         header,  pubkey,  signature,
         from_header_sequence, from_address_sequence,
         to_header_sequence,   to_address_sequence,
-        expected_to           
+        expected_to_hash           
     )
 }

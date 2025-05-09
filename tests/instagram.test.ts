@@ -1,10 +1,8 @@
 /* tests/instagram.test.ts */
 
 import { beforeAll, describe, expect, it } from 'vitest';
-
-import { readFileSync } from 'node:fs';
-import os from 'node:os';
-import path from 'node:path';
+import fs from 'fs';
+import path from 'path';
 
 import { createProver, generateCircuitInputs } from '../src/helpers';
 
@@ -14,40 +12,46 @@ import type { Prover } from '@zkpersona/noir-helpers';
 /* ACIR JSON (nargo compile → target/instagram_example.json) */
 import circuit from '../target/instagram_example.json' assert { type: 'json' };
 
-/* Parametreli testleri kolay kapatıp açmak istersek */
-const skipPlonkProving = process.env.PROVE_PLONK === 'false';
-const skipHonkProving  = process.env.PROVE_HONK  === 'false';
+/* Skip tests based on environment variables */
+const skipPlonkProving = false; // Default to running all tests
+const skipHonkProving = false;  // Default to running all tests
 
 describe('Instagram email verification', () => {
   let prover: Prover;
-
+  // The correct recipient email from the test file
+  const RECIPIENT_EMAIL = 'yildirim.mesude11@gmail.com';
+  
   beforeAll(() => {
-    // “all” => ilk çağrıda honk & plonk backend artefaktlarını derler
-    const threads = os.cpus().length;
-    prover = createProver(circuit as CompiledCircuit, { type: 'all', threads });
+    // Initialize prover
+    prover = createProver(circuit as CompiledCircuit, { type: 'all' });
   });
 
-  it.skipIf(skipHonkProving)('proves & verifies (honk backend)', async () => {
-    const eml = readFileSync(path.join(__dirname, '../data/instagram-valid.eml'));
+  it.skipIf(skipHonkProving)('proves DKIM and email hash (honk backend)', async () => {
+    const eml = fs.readFileSync(path.join('data', 'instagram-valid.eml'));
     
-
-    const inputs = await generateCircuitInputs(eml, 'instagram');
-    const proof1 = await prover.fullProve(inputs, { type: 'honk' });
-    const ok    = await prover.verify(proof1,    { type: 'honk' });
-    console.log('proof1', proof1);
-    expect(ok).toBe(true);
+    // generateCircuitInputs now handles both DKIM verification and email hash verification
+    const inputs = await generateCircuitInputs(eml, RECIPIENT_EMAIL);
+    
+    // Generate proof that: 
+    // 1. Email has valid DKIM signature from Instagram
+    // 2. The email is addressed to the claimed recipient (verified by hash)
+    const proof = await prover.fullProve(inputs, { type: 'honk' });
+    const verified = await prover.verify(proof, { type: 'honk' });
+    
+    console.log('Proof outputs:', proof.publicInputs);
+    expect(verified).toBe(true);
   });
 
-  it.skipIf(skipPlonkProving)('proves & verifies (plonk backend)', async () => {
-    const eml = readFileSync(path.join(__dirname, '../data/instagram-valid.eml'));
+  it.skipIf(skipPlonkProving)('proves DKIM and email hash (plonk backend)', async () => {
+    const eml = fs.readFileSync(path.join('data', 'instagram-valid.eml'));
 
-    const inputs = await generateCircuitInputs(eml, 'instagram');
+    // Same inputs for both backends
+    const inputs = await generateCircuitInputs(eml, RECIPIENT_EMAIL);
 
-    const proof2 = await prover.fullProve(inputs, { type: 'plonk' });
-    const ok    = await prover.verify(proof2,    { type: 'plonk' });
-    console.log('proof2', proof2);
-    expect(ok).toBe(true);
+    const proof = await prover.fullProve(inputs, { type: 'plonk' });
+    const verified = await prover.verify(proof, { type: 'plonk' });
+    
+    console.log('Proof outputs:', proof.publicInputs);
+    expect(verified).toBe(true);
   });
-
-
 });
