@@ -13,7 +13,7 @@ import type { Prover } from '@zkpersona/noir-helpers';
 import circuit from '../target/instagram_example.json' assert { type: 'json' };
 
 /* Skip tests based on environment variables */
-const skipPlonkProving = true; // Default to running all tests
+const skipPlonkProving = false; // Default to running all tests
 const skipHonkProving = false;  // Default to running all tests
 
 describe('Instagram email verification', () => {
