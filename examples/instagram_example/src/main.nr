@@ -15,13 +15,15 @@ fn main(
     from_address_sequence: Sequence,
     to_header_sequence:   Sequence,
     to_address_sequence:  Sequence,
-    expected_to_hash: Field,  // Updated: hash of user's email to verify
+    expected_to_hash: Field,      // Hash of user's email to verify
+    expected_username_hash: Field, // Hash of user's Instagram username to verify
 ) -> pub VerifiedOutputs {
 
     verify_instagram_email(
         header,  pubkey,  signature,
         from_header_sequence, from_address_sequence,
         to_header_sequence,   to_address_sequence,
-        expected_to_hash           
+        expected_to_hash,
+        expected_username_hash           
     )
 }

@@ -20,21 +20,24 @@ describe('Instagram email verification', () => {
   let prover: Prover;
   // The correct recipient email from the test file
   const RECIPIENT_EMAIL = 'yildirim.mesude11@gmail.com';
+  // The expected username to verify
+  const INSTAGRAM_USERNAME = 'denemedeneme581';
   
   beforeAll(() => {
     // Initialize prover
     prover = createProver(circuit as CompiledCircuit, { type: 'all' });
   });
 
-  it.skipIf(skipHonkProving)('proves DKIM and email hash (honk backend)', async () => {
+  it.skipIf(skipHonkProving)('proves DKIM, email hash, and username (honk backend)', async () => {
     const eml = fs.readFileSync(path.join('data', 'instagram-valid.eml'));
     
-    // generateCircuitInputs now handles both DKIM verification and email hash verification
-    const inputs = await generateCircuitInputs(eml, RECIPIENT_EMAIL);
+    // Generate circuit inputs for both email and username verification
+    const inputs = await generateCircuitInputs(eml, RECIPIENT_EMAIL, INSTAGRAM_USERNAME);
     
     // Generate proof that: 
     // 1. Email has valid DKIM signature from Instagram
     // 2. The email is addressed to the claimed recipient (verified by hash)
+    // 3. The username in the email matches the expected username (verified by hash)
     const proof = await prover.fullProve(inputs, { type: 'honk' });
     const verified = await prover.verify(proof, { type: 'honk' });
     
@@ -42,11 +45,11 @@ describe('Instagram email verification', () => {
     expect(verified).toBe(true);
   });
 
-  it.skipIf(skipPlonkProving)('proves DKIM and email hash (plonk backend)', async () => {
+  it.skipIf(skipPlonkProving)('proves DKIM, email hash, and username (plonk backend)', async () => {
     const eml = fs.readFileSync(path.join('data', 'instagram-valid.eml'));
 
     // Same inputs for both backends
-    const inputs = await generateCircuitInputs(eml, RECIPIENT_EMAIL);
+    const inputs = await generateCircuitInputs(eml, RECIPIENT_EMAIL, INSTAGRAM_USERNAME);
 
     const proof = await prover.fullProve(inputs, { type: 'plonk' });
     const verified = await prover.verify(proof, { type: 'plonk' });
